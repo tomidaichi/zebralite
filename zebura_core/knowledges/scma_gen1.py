@@ -91,10 +91,13 @@ class ScmaGen:
             str_flag = str_flag or column_type_series.str.contains('text', case=False).any()
 
             if str_flag:
-                langCode = detect_language(' '.join(one_col))
-                if langCode is not None:
-                    lang = langcode2name(langCode)
-                    fd_df.loc[fd_df['column_name'] == key, 'val_lang'] = lang
+                # 过滤掉None值，只保留字符串 / Filter out None values, keep only strings
+                v_filtered_col = [str(item) for item in one_col if item is not None and str(item).strip()]
+                if v_filtered_col:  # 只有当有有效数据时才进行语言检测 / Only detect language when there's valid data
+                    langCode = detect_language(' '.join(v_filtered_col))
+                    if langCode is not None:
+                        lang = langcode2name(langCode)
+                        fd_df.loc[fd_df['column_name'] == key, 'val_lang'] = lang
             
         result = self.ops.show_primary_key(tb_name)
         primary_keys = result.fetchall()
@@ -578,7 +581,7 @@ if __name__ == '__main__':
 
     s_name = 'Mysql1'
     dbServer = make_dbServer(s_name)
-    dbServer['db_name'] = 'ebook'
+    dbServer['db_name'] = 'e_stat'
     # 创建存放文件的目录
     out_path=f'{const.S_TRAINING_PATH}/{dbServer["db_name"]}'
     wk_dir = os.getcwd()
@@ -587,7 +590,7 @@ if __name__ == '__main__':
         os.makedirs(directory, exist_ok=True)
     xls_name = os.path.join(directory, f'{const.S_METADATA_FILE}')  
     
-    mg = ScmaGen(dbServer,'Chinese')
+    mg = ScmaGen(dbServer,'Japanese')
     #1. 从数据库中读取所有表的schema信息
     mg.gen_db_info(xls_name)
     # 2. 生成table grouping
